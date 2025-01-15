@@ -260,11 +260,19 @@ std::string Pool::_generateMiningNotify(const bool cleanJobs) {
 	oss << "]]}\n";
 	return oss.str();
 }
+
+std::string stratumResponseStr(const std::string &id, const std::string &result) {
+	return "{\"id\": "s + id + ", \"result\": "s + result + ", \"error\": null}\n"s;
+}
+std::string stratumErrorStr(const std::string &id, const int code, const std::string &message) {
+	return "{\"id\": "s + id + ", \"result\": null, \"error\": ["s + std::to_string(code) + ", \"" + message + "\"]}\n"s;
+}
+
 std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_ptr<Worker>, std::string>& message) {
 	const std::shared_ptr<Worker> worker(message.first);
 	if (!worker) {
 		ERRORMSG("Processing message from a null worker");
-		return {"{\"id\": null, \"result\": null, \"error\": [20, \"Invalid worker\"]}\n"s, true};
+		return {stratumErrorStr("null", 20, "Invalid worker"s), true};
 	}
 	std::string method;
 	std::string messageId("null");
@@ -274,7 +282,7 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 	}
 	catch (std::exception &e) {
 		LOGMSG("Received invalid JSON message from " << worker->str());
-		return {"{\"id\": null, \"result\": null, \"error\": [20, \"Invalid JSON message\"]}\n"s, true};
+		return {stratumErrorStr("null", 20, "Invalid JSON message"s), true};
 	}
 	try {
 		uint64_t messageIdUInt(jsonMessage["id"]);
@@ -288,17 +296,17 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 	}
 	catch (std::exception &e) {
 		LOGMSG("Received message with missing or invalid method from " << worker->str());
-		return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Missing or invalid method\"]}\n"s, true};
+		return {stratumErrorStr(messageId, 20, "Missing or invalid method"s), true};
 	}
 	if (method == "mining.subscribe") {
 		worker->state = Worker::State::SUBSCRIBED;
 		LOGMSG("Subscribed " << worker->str());
-		return {"{\"id\": "s + messageId + ", \"result\": [[[\"mining.notify\", \""s + worker->extraNonce1 + "\"]],\""s + worker->extraNonce1 + "\", "s + std::to_string(extraNonce2Length) + "], \"error\": null}\n"s, false};
+		return {stratumResponseStr(messageId, "[[[\"mining.notify\", \""s + worker->extraNonce1 + "\"]],\""s + worker->extraNonce1 + "\", "s + std::to_string(extraNonce2Length) + "]"s), false};
 	}
 	else if (method == "mining.authorize") {
 		if (worker->state != Worker::State::SUBSCRIBED) {
 			LOGMSG("Not authorizing unsubscribed " << worker->str());
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [25, \"Not subscribed\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 25, "Not subscribed"s), true};
 		}
 		else {
 			std::string name;
@@ -307,18 +315,18 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 			}
 			catch (std::exception &e) {
 				LOGMSG("Not authorizing (missing or invalid name) " << worker->str());
-				return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Missing or invalid name\"]}\n"s, true};
+				return {stratumErrorStr(messageId, 20, "Missing or invalid name"s), true};
 			}
 			worker->name = name;
 			worker->state = Worker::State::AUTHORIZED;
 			LOGMSG("Authorized " << worker->str() << "; user " << worker->name);
-			return {"{\"id\": "s + messageId + ", \"result\": true, \"error\": null}\n"s + _generateMiningNotify(true) + "{\"id\": null, \"method\": \"client.show_message\", \"params\": [\"Hello "s + worker->name + ", Happy Mining!\"]}\n"s, false};
+			return {stratumResponseStr(messageId, "true") + _generateMiningNotify(true) + "{\"id\": null, \"method\": \"client.show_message\", \"params\": [\"Hello "s + worker->name + ", Happy Mining!\"]}\n"s, false};
 		}
 	}
 	else if (method == "mining.submit") {
 		if (worker->state != Worker::State::AUTHORIZED) {
 			LOGMSG("Ignoring share from unauthorized " << worker->str());
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [24, \"Unauthorized worker\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 24, "Unauthorized worker"s), true};
 		}
 		std::string name, id, extranonce2, nTime, nOffset;
 		try {
@@ -331,32 +339,32 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 		catch (std::exception &e) {
 			LOGMSG("Received invalid submission (invalid parameters) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Invalid params\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Invalid params"s), true};
 		}
 		if (name != worker->name) {
 			LOGMSG("Received invalid submission (wrong name) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Wrong name\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Wrong name"s), true};
 		}
 		if (!isHexStrOfSize(extranonce2, 2U*extraNonce2Length)) {
 			LOGMSG("Received invalid submission (invalid Extra Nonce 2) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Invalid Extra Nonce 2 (must be "s + std::to_string(2U*extraNonce2Length) + " hex digits)\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Invalid Extra Nonce 2 (must be "s + std::to_string(2U*extraNonce2Length) + " hex digits"s), true};
 		}
 		if (!isHexStr(nTime)) {
 			LOGMSG("Received invalid submission (invalid nTime) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Invalid nTime (must be a hex str)\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Invalid nTime (must be a hex str)"s), true};
 		}
 		if (!isHexStrOfSize(nOffset, 64)) {
 			LOGMSG("Received invalid submission (invalid nOffset) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Invalid nOffset (must be 64 hex digits)\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Invalid nOffset (must be 64 hex digits)"s), true};
 		}
 		if (_roundOffsets.find(nOffset) != _roundOffsets.end()) {
 			LOGMSG("Received invalid submission (duplicate share) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [22, \"Duplicate share\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 22, "Duplicate share"s), true};
 		}
 		uint64_t jobId;
 		try {
@@ -365,7 +373,7 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 		catch (const std::exception &e) { // This should never happen as a Hex Check was previously done
 			ERRORMSG("SToLl failed for some reason while decoding the Job Id - " << e.what());
 			ERRORMSG("Submission was " << message.second);
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Internal error :|\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Internal error :|"s), true};
 		}
 		bool jobFound(false);
 		StratumJob shareJob;
@@ -379,7 +387,7 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 		if (!jobFound) {
 			LOGMSG("Received invalid submission (job not found) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [21, \"Job not found\"]}\n"s, false};
+			return {stratumErrorStr(messageId, 21, "Job not found"s), false};
 		}
 		uint64_t shareTimestamp;
 		try {
@@ -388,30 +396,30 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 		catch (const std::exception &e) { // This should never happen as a Hex Check was previously done
 			ERRORMSG("SToLl failed for some reason while decoding the Timestamp - " << e.what());
 			ERRORMSG("Submission was " << message.second);
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Internal error :|\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Internal error :|"s), true};
 		}
 		if (shareTimestamp < shareJob.bh.curtime) {
 			LOGMSG("Received invalid submission (timestamp too early) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Timestamp too early (please check your system clock)\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Timestamp too early (please check your system clock)"s), true};
 		}
 		else if (shareTimestamp > nowU64() + 5) {
 			LOGMSG("Received invalid submission (timestamp too late) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Timestamp too late (please check your system clock)\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Timestamp too late (please check your system clock))"s), true};
 		}
 		const std::vector<uint8_t> nOffsetV8(reverse(hexStrToV8(nOffset)));
 		if (*reinterpret_cast<const uint16_t*>(&nOffsetV8.data()[0]) != 2) {
 			LOGMSG("Received invalid submission (invalid PoW Version) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Invalid PoW Version\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 20, "Invalid PoW Version"s), true};
 		}
 		shareJob.merkleRootGen(worker->extraNonce1, extranonce2);
 		const uint64_t sharePrimeCount(_checkPoW(shareJob, nOffsetV8)), sharePrimeCountMin(std::max(4ULL, shareJob.acceptedPatterns[0].size() - 2ULL));
 		if (sharePrimeCount < sharePrimeCountMin) {
 			LOGMSG("Received invalid submission (too low Share Prime Count) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
-			return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [23, \"Received a "s + std::to_string(sharePrimeCount) + "-share, "s + std::to_string(sharePrimeCountMin) + "-shares or better expected\"]}\n"s, true};
+			return {stratumErrorStr(messageId, 23, "Received a "s + std::to_string(sharePrimeCount) + "-share, "s + std::to_string(sharePrimeCountMin) + "-shares or better expected"s), true};
 		}
 		_roundOffsets.insert(nOffset);
 		_rounds.back().shares++;
@@ -440,7 +448,7 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 			}
 			catch (std::exception &e) {
 				ERRORMSG("Could not submit block: " << e.what() << std::endl);
-				return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Internal error :|\"]}\n"s, true};
+				return {stratumErrorStr(messageId, 20, "Internal error :|"s), true};
 			}
 			if (submitblockResponseResult == nullptr && submitblockResponseError == nullptr) {
 				std::string blockHash;
@@ -457,24 +465,21 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 				}
 				catch (std::exception &e) {
 					ERRORMSG("Could not start a new round: " << e.what() << std::endl);
-					return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Internal error :|\"]}\n"s, true};
+					return {stratumErrorStr(messageId, 20, "Internal error :|"s), true};
 				}
 				LOGMSG("Submission accepted :D ! Blockhash: " << blockHash);
 			}
 			else {
 				LOGMSG("Submission rejected :| ! Received: " << submitblockResponse.dump());
-				return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Your block was rejected by the Riecoin Network :|, really sorry\"]}\n", false};
+				return {stratumErrorStr(messageId, 20, "Your block was rejected by the Riecoin Network :|, really sorry"s), false};
 			}
 		}
 		return {"{\"id\": "s + messageId + ", \"result\": true, \"error\": null}\n"s, false};
 	}
 	else {
 		LOGMSG("Received invalid request (unsupported method) from " << worker->str());
-		return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Unsupported method "s + method + "\"]}\n"s, true};
+		return {stratumErrorStr(messageId, 20, "Unsupported method "s + method), true};
 	}
-	// This code should never be reached as something must have been returned by now... Reference to a funny quote in a very old Riecoin Software.
-	ERRORMSG("If you see this, life is VERY Bad!");
-	return {"{\"id\": "s + messageId + ", \"result\": null, \"error\": [20, \"Internal error :| - Life is VERY Bad!\"]}\n"s, true};
 }
 
 void Pool::_startNewRound(const uint32_t heightStart) {
