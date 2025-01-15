@@ -119,6 +119,7 @@ It is case sensitive. A line starting with `#` will be ignored, as well as inval
 * `WalletName`: the name of the wallet, set this if you created multiple wallets in Riecoin Core. Default: empty
 * `WalletUsername`: the username used to connect to the Riecoin server (same as rpcuser in riecoin.conf). Default: empty
 * `WalletPassword`: the password used to connect to the Riecoin server (same as rpcpassword in riecoin.conf). Default: empty
+* `WalletCookie`: the cookie file containing the credentials, overriding `WalletUsername` and `WalletPassword`. Default: empty/none.
 * `StatsJsonFile`: the Json file where statistics (for now just Round data) are being stored. Default: SPM_YYYY-MM-DD_hhmmss.json
 * `StatsHtmlFile`: the Html page where one can see an overview of the statistics. Default: SPM_YYYY-MM-DD_hhmmss.html
 * `StatsUpdateInterval`: how often in s to update the stats. Default: 30

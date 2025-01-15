@@ -62,6 +62,7 @@ bool Configuration::parse(const int argc, char** argv) {
 		else if (key == "WalletName") _options.walletName = value;
 		else if (key == "WalletUsername") _options.walletUsername = value;
 		else if (key == "WalletPassword") _options.walletPassword = value;
+		else if (key == "WalletCookie") _options.walletCookie = value;
 		else if (key == "StatsJsonFile") _options.statsJsonFile = value;
 		else if (key == "StatsHtmlFile") _options.statsHtmlFile = value;
 		else if (key == "StatsUpdateInterval") {
@@ -79,8 +80,12 @@ bool Configuration::parse(const int argc, char** argv) {
 	std::cout << "Pool Port: " << _options.poolPort << std::endl;
 	std::cout << "Riecoin Wallet Server: " << _options.walletHost << ":" << _options.walletPort << std::endl;
 	std::cout << "Riecoin Wallet Name: " << _options.walletName << std::endl;
-	std::cout << "Riecoin Wallet Username: " << _options.walletUsername << std::endl;
-	std::cout << "Riecoin Wallet Password: <"s + std::to_string(_options.walletPassword.size()) + " character(s)>" << std::endl;
+	if (_options.walletCookie != "")
+		std::cout << "Riecoin Wallet Cookie: " << _options.walletCookie << std::endl;
+	else {
+		std::cout << "Riecoin Wallet Username: " << _options.walletUsername << std::endl;
+		std::cout << "Riecoin Wallet Password: ..." << std::endl;
+	}
 	std::cout << "Stats Json File: " << _options.statsJsonFile << std::endl;
 	std::cout << "Stats Html Page: " << _options.statsHtmlFile << std::endl;
 	std::cout << "Stats Update Interval: " << _options.statsUpdateInterval << " s" << std::endl;

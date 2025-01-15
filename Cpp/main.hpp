@@ -16,7 +16,7 @@ struct Options {
 	uint16_t poolPort{2005U};
 	std::string walletHost{"127.0.0.1"s};
 	uint16_t walletPort{28332U};
-	std::string walletName{""s}, walletUsername{""s}, walletPassword{""s};
+	std::string walletName{""s}, walletUsername{""s}, walletPassword{""s}, walletCookie{""s};
 	std::string statsJsonFile{"SPM_"s + timeNowStr(true) + ".json"s}, statsHtmlFile{"SPM_"s + timeNowStr(true) + ".html"s};
 	double statsUpdateInterval{30.};
 };
