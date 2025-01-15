@@ -9,27 +9,16 @@
 using namespace std::string_literals;
 using namespace std::chrono_literals;
 
-#define versionString	"StellaPool-Mini C++ 24.09"
+#define versionString	"StellaPool-Mini C++ 2501"
 
 struct Options {
-	std::string poolAddress;
-	uint16_t poolPort;
-	std::string walletHost;
-	uint16_t walletPort;
-	std::string walletName, walletUsername, walletPassword;
-	std::string statsJsonFile, statsHtmlFile;
-	double statsUpdateInterval;
-	Options() :
-		poolAddress("ric1qr3yxckxtl7lacvtuzhrdrtrlzvlydane2h37ja"s),
-		poolPort(2005U),
-		walletHost("127.0.0.1"s),
-		walletPort(28332U),
-		walletName(""s),
-		walletUsername(""s),
-		walletPassword(""s),
-		statsJsonFile("SPM_"s + timeNowStr(true) + ".json"s),
-		statsHtmlFile("SPM_"s + timeNowStr(true) + ".html"s),
-		statsUpdateInterval(30.) {}
+	std::string poolAddress{"ric1pstellap55ue6keg3ta2qwlxr0h58g66fd7y4ea78hzkj3r4lstrsk4clvn"s};
+	uint16_t poolPort{2005U};
+	std::string walletHost{"127.0.0.1"s};
+	uint16_t walletPort{28332U};
+	std::string walletName{""s}, walletUsername{""s}, walletPassword{""s};
+	std::string statsJsonFile{"SPM_"s + timeNowStr(true) + ".json"s}, statsHtmlFile{"SPM_"s + timeNowStr(true) + ".html"s};
+	double statsUpdateInterval{30.};
 };
 
 class Configuration {
