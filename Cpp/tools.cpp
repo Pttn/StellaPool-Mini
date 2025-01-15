@@ -172,7 +172,7 @@ std::array<uint8_t, 32> calculateMerkleRoot(const std::vector<std::array<uint8_t
 
 std::string timeStr(const uint64_t timestamp, bool simple) {
 	const std::time_t timeT(timestamp);
-	const std::tm *timeTm(std::localtime(&timeT));
+	const std::tm *timeTm(std::gmtime(&timeT));
 	std::ostringstream oss;
 	if (simple)
 		oss << std::put_time(timeTm, "%Y-%m-%d_%H%M%S");
