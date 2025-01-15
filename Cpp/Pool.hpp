@@ -79,7 +79,7 @@ struct Share { // Just used for recent statistics, not actual share data
 constexpr int maxEvents(16);
 constexpr int maxMessageLength(32768);
 constexpr double jobRefreshInterval(30.);
-constexpr double maxInactivityTime(600.);
+constexpr double maxInactivityTime(1800.);
 constexpr uint64_t recentSharesTime(3600ULL);
 inline const std::string poolSignature("/SPM/");
 class Pool {

@@ -845,14 +845,16 @@ void Pool::run() {
 				}
 			}
 		}
-		for (auto it(_workers.begin()) ; it != _workers.end() ; it++) {
-			const std::string disconnectMessage("{\"id\": null, \"method\": \"client.show_message\", \"params\": [\"Disconnected due to inactivity\"]}\n"s);
+		for (auto it(_workers.cbegin()); it != _workers.cend();) {
+			const std::string disconnectMessage("{\"id\": null, \"method\": \"client.show_message\", \"params\": [\"Worker disconnected due to inactivity\"]}\n"s);
 			if (timeSince(it->second->latestShareTp) > maxInactivityTime) {
 				LOGMSG("Disconnecting inactive " << it->second->str());
 				write(it->second->fileDescriptor, disconnectMessage.c_str(), disconnectMessage.size());
 				close(it->second->fileDescriptor);
-				_workers.erase(it);
+				it = _workers.erase(it);
 			}
+			else
+				it++;
 		}
 	}
 	_statsUpdater.join();
