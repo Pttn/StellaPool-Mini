@@ -1,6 +1,6 @@
 CXX    = g++
 CFLAGS = -Wall -Wextra -std=c++20 -O3 -march=native
-LIBS   = -pthread -lcrypto -lcurl -lgmpxx -lgmp
+LIBS   = -pthread -lcurl -lgmpxx -lgmp
 HPP    = main.hpp Pool.hpp Pool.hpp tools.hpp
 
 all: CFLAGS += -s

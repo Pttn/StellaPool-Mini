@@ -73,13 +73,12 @@ You can get the source code with Git and compile this C++ program with g++ and m
 
 * [Curl](https://curl.haxx.se/)
 * [GMP](https://gmplib.org/)
-* [LibSSL](https://www.openssl.org/)
 * [NLohmann Json](https://json.nlohmann.me/)
 
 On Debian 12, you can easily install these by doing as root:
 
 ```bash
-apt install g++ make git libcurl4-openssl-dev libgmp-dev libssl-dev nlohmann-json3-dev
+apt install g++ make git libcurl4-openssl-dev libgmp-dev nlohmann-json3-dev
 ```
 
 Then, download the source files, go/`cd` to the directory, and run `make`:
