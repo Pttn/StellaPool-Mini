@@ -385,7 +385,7 @@ std::pair<std::string, bool> Pool::_processMessage(const std::pair<std::shared_p
 			}
 		}
 		if (!jobFound) {
-			LOGMSG("Received invalid submission (job not found) from " << worker->str());
+			// LOGMSG("Received invalid submission (job not found) from " << worker->str());
 			_recentShares.push_back(Share{nowU64(), name, false});
 			return {stratumErrorStr(messageId, 21, "Job not found"s), false};
 		}
